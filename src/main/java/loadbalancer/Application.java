@@ -2,6 +2,7 @@ package loadbalancer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Created by Pawel on 2017-08-27.
