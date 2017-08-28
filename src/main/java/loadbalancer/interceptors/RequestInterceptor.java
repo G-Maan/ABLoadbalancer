@@ -22,8 +22,10 @@ public class RequestInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o) throws Exception {
+        //TODO: logger
         String userId =  httpServletRequest.getParameter("id");
 
+        //TODO: delegate to method
         loadbalancer = ApplicationContextProvider.getContext().getBean("loadbalancer", Loadbalancer.class);
         userQueue = ApplicationContextProvider.getContext().getBean("userQueue", UserQueue.class);
 

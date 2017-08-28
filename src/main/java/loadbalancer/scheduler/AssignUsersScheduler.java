@@ -1,6 +1,7 @@
 package loadbalancer.scheduler;
 
 import loadbalancer.logic.Loadbalancer;
+import loadbalancer.logic.UserQueue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -11,12 +12,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class AssignUsersScheduler {
 
-    @Autowired
-    private Loadbalancer loadbalancer;
+    private static final long DELAY = 1000l; //TODO: comment
 
-    @Scheduled(fixedDelay = 1000)
+    private Loadbalancer loadbalancer;
+    private UserQueue userQueue;
+
+    @Autowired
+    public AssignUsersScheduler(Loadbalancer loadbalancer, UserQueue userQueue) {
+        this.loadbalancer = loadbalancer;
+        this.userQueue = userQueue;
+    }
+
+    @Scheduled(fixedDelay = DELAY)
     public void assignUsersToGroups() {
-        loadbalancer.assignUserToGroups();
+        //TODO: start worker
+        if (userQueue.getUsersQueueSize() > 0){
+            loadbalancer.assignUserToGroups();
+            //TODO: loadbalancer working
+        }
+        //TODO: finished worker
     }
 
 }

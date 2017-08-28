@@ -19,11 +19,11 @@ public class GroupsConfiguration {
         return groupsConfiguration;
     }
 
-    public Map<String, Integer> getGroupsConfigurationAsPercentages() {
+    public Map<String, Integer> getGroupsConfigurationAsPercentages(int numberOfUsers) {
         return groupsConfiguration
                 .entrySet()
                 .stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> (e.getValue() / 100)));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> (int)Math.floor(e.getValue() / 100.00 * numberOfUsers)));
     }
 
     public int getGroupsNumber() {

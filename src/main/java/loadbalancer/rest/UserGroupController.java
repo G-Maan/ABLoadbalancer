@@ -12,13 +12,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class UserGroupController {
 
-    @Autowired
     private Loadbalancer loadbalancer;
+
+    @Autowired
+    public UserGroupController(Loadbalancer loadbalancer) {
+        this.loadbalancer = loadbalancer;
+    }
 
     @GetMapping(value = "/route")
     public String getUserGroup(@RequestParam(value = "id") String userId) {
-        System.out.println("abc");
-        return userId;
+        return loadbalancer.getUserGroup(userId);
     }
 
 }

@@ -3,7 +3,6 @@ package loadbalancer.logic;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 /**
@@ -12,23 +11,27 @@ import java.util.Queue;
 @Component
 public class UserQueue {
 
-    private Queue<String> usersQueue = new LinkedList<>();
-
     private static final int DEQUEUE_NUMBER = 10;
 
+    private Queue<String> queuedUsers = new LinkedList<>();
+
     public void addUser(String userId) {
-        usersQueue.add(userId);
+        queuedUsers.add(userId);
     }
 
-    public List<String> dequeue() {
-        List<String> dequeueUsersList = new LinkedList<>();
-        int usersToDequeue = usersQueue.size() < DEQUEUE_NUMBER ? usersQueue.size() : DEQUEUE_NUMBER;
+    public int getUsersQueueSize() {
+        return queuedUsers.size();
+    }
 
+    Queue<String> dequeue() {
+        Queue<String> dequeuedUsers = new LinkedList<>();
+        int usersToDequeue = queuedUsers.size() < DEQUEUE_NUMBER ? queuedUsers.size() : DEQUEUE_NUMBER;
+
+        //TODO: JAVA 8
         for(int i = 0; i < usersToDequeue; i++) {
-            dequeueUsersList.add(usersQueue.poll());
+            dequeuedUsers.add(queuedUsers.poll());
         }
-
-        return dequeueUsersList;
+        return dequeuedUsers;
     }
 
 }
