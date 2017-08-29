@@ -1,8 +1,10 @@
 package loadbalancer.interceptors;
 
+import loadbalancer.Application;
 import loadbalancer.ApplicationContextProvider;
 import loadbalancer.logic.Loadbalancer;
 import loadbalancer.logic.UserQueue;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -16,18 +18,18 @@ import javax.servlet.http.HttpServletResponse;
 @Component
 public class RequestInterceptor implements HandlerInterceptor {
 
+    private static final Logger logger = Logger.getLogger(RequestInterceptor.class);
+
     private Loadbalancer loadbalancer;
 
     private UserQueue userQueue;
 
     @Override
     public boolean preHandle(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o) throws Exception {
-        //TODO: logger
+        logger.info("Entered preHandle method");
         String userId =  httpServletRequest.getParameter("id");
 
-        //TODO: delegate to method
-        loadbalancer = ApplicationContextProvider.getContext().getBean("loadbalancer", Loadbalancer.class);
-        userQueue = ApplicationContextProvider.getContext().getBean("userQueue", UserQueue.class);
+        initializeBeans();
 
         if(!loadbalancer.userHasGroup(userId)) {
             userQueue.addUser(userId);
@@ -42,4 +44,11 @@ public class RequestInterceptor implements HandlerInterceptor {
     @Override
     public void afterCompletion(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Object o, Exception e) throws Exception {
     }
+
+    private void initializeBeans() {
+        loadbalancer = ApplicationContextProvider.getContext().getBean("loadbalancer", Loadbalancer.class);
+        userQueue = ApplicationContextProvider.getContext().getBean("userQueue", UserQueue.class);
+        logger.info("Beans initialized successfully");
+    }
+
 }

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.stream.IntStream;
 
 /**
  * Created by Pawel on 2017-08-27.
@@ -27,10 +28,7 @@ public class UserQueue {
         Queue<String> dequeuedUsers = new LinkedList<>();
         int usersToDequeue = queuedUsers.size() < DEQUEUE_NUMBER ? queuedUsers.size() : DEQUEUE_NUMBER;
 
-        //TODO: JAVA 8
-        for(int i = 0; i < usersToDequeue; i++) {
-            dequeuedUsers.add(queuedUsers.poll());
-        }
+        IntStream.range(0, usersToDequeue).forEach($ -> dequeuedUsers.add(queuedUsers.poll()));
         return dequeuedUsers;
     }
 

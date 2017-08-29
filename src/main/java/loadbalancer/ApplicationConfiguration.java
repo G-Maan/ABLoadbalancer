@@ -21,11 +21,4 @@ public class ApplicationConfiguration extends WebMvcConfigurerAdapter{
         registry.addInterceptor(new RequestInterceptor()).addPathPatterns("/route");
     }
 
-    /* public static PropertiesFactoryBean getGroupsConfiguration() {
-        PropertiesFactoryBean bean = new PropertiesFactoryBean();
-        bean.setLocation(new ClassPathResource(
-                "groups-configuration.properties"));
-        return bean;
-    }*/
-
 }
