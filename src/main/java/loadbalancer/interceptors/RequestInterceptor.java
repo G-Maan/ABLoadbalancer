@@ -1,6 +1,5 @@
 package loadbalancer.interceptors;
 
-import loadbalancer.Application;
 import loadbalancer.ApplicationContextProvider;
 import loadbalancer.logic.Loadbalancer;
 import loadbalancer.logic.UserQueue;
@@ -12,13 +11,15 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static org.apache.log4j.Logger.getLogger;
+
 /**
  * Created by Pawel on 2017-08-27.
  */
 @Component
 public class RequestInterceptor implements HandlerInterceptor {
 
-    private static final Logger logger = Logger.getLogger(RequestInterceptor.class);
+    private static final Logger logger = getLogger(RequestInterceptor.class);
 
     private Loadbalancer loadbalancer;
 

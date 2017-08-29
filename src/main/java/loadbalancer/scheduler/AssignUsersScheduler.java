@@ -7,14 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import static org.apache.log4j.Logger.getLogger;
+
 /**
  * Created by Pawel on 2017-08-28.
  */
 @Component
 public class AssignUsersScheduler {
 
-    private static final long DELAY = 100L; //Delay after previous method finish
-    private static final Logger logger = Logger.getLogger(AssignUsersScheduler.class);
+    private static final long FREQUENCY = 100L; //Scheduler's frequency
+    private static final Logger logger = getLogger(AssignUsersScheduler.class);
 
     private Loadbalancer loadbalancer;
     private UserQueue userQueue;
@@ -25,7 +27,7 @@ public class AssignUsersScheduler {
         this.userQueue = userQueue;
     }
 
-    @Scheduled(fixedDelay = DELAY)
+    @Scheduled(fixedDelay = FREQUENCY)
     public void assignUsersToGroups() {
         if (userQueue.getUsersQueueSize() > 0){
             logger.info("Scheduler invoked scheduled method");

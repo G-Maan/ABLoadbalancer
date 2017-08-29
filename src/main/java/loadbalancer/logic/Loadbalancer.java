@@ -10,10 +10,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static org.apache.log4j.Logger.getLogger;
 
 /**
  * Created by Pawel on 2017-08-27.
@@ -21,7 +22,7 @@ import java.util.stream.Stream;
 @Component
 public class Loadbalancer {
 
-    private static final Logger logger = Logger.getLogger(Loadbalancer.class);
+    private static final Logger logger = getLogger(Loadbalancer.class);
 
     private GroupsConfiguration groupsConfiguration;
 
@@ -30,6 +31,8 @@ public class Loadbalancer {
     private Map<String, String> userGroups = new HashMap<>();
 
     private CountDownLatch latch;
+
+    private static final int LATCH_COUNT = 1;
 
     @Autowired
     public Loadbalancer(GroupsConfiguration groupsConfiguration, UserQueue userQueue) {
@@ -53,16 +56,17 @@ public class Loadbalancer {
             }
             return userGroups.get(userId);
         } catch (InterruptedException e) {
+            logger.error("Couldn't wait on latch", e);
             e.printStackTrace();
         }
         return null;
     }
 
     /**
-     * Method which delegates assigning users to userGroup based on number of users currently in a waiting queue
+     * Method which delegates assigning users to userGroup based on number of users currently in a waiting queue.
      */
     public void assignUserToGroups() {
-        latch = new CountDownLatch(1);
+        latch = new CountDownLatch(LATCH_COUNT);
         Queue<String> unassignedUsersQueue = userQueue.dequeue();
 
         Map<String, Integer> initialUsersGroups = new HashMap<>();
@@ -70,47 +74,45 @@ public class Loadbalancer {
         int unassignedUsers = unassignedUsersQueue.size();
         logger.info("Users to be assigned: " + unassignedUsers);
 
-        if (unassignedUsers <= groupsConfiguration.getGroupsConfiguration().entrySet().size()){
+        if (unassignedUsers <= groupsConfiguration.getGroupsSize()){
             assignBasedOnCurrentCapacity(unassignedUsers, unassignedUsersQueue);
             return;
         }
 
         groupsConfiguration.getGroupsConfiguration().entrySet().forEach(entry -> initialUsersGroups.put(entry.getKey(), (int)Math.floor(entry.getValue() / 100.00 * unassignedUsers)));
 
-        initialUsersGroups.entrySet().forEach(logger::info);
-
         int numberOfUsersAssigned = initialUsersGroups.values().stream().mapToInt(Integer::intValue).sum();
         int numberOfUsersUnassigned = unassignedUsers - numberOfUsersAssigned;
         logger.info("Users assigned: " + numberOfUsersAssigned);
         logger.info("Users still unassigned: " + numberOfUsersUnassigned);
 
-        mergeWithUserGroupsAndReleaseLatch(assignRestOfUsers(numberOfUsersUnassigned, initialUsersGroups, unassignedUsers), unassignedUsersQueue);
+        mergeWithUserGroupsAndReleaseLatch(assignBasedOnPreviousAssignments(numberOfUsersUnassigned, initialUsersGroups), unassignedUsersQueue);
     }
 
-    private Map<String, Integer> assignRestOfUsers(int numberOfUsersUnassigned, Map<String, Integer> initialUsersGroups, int unassignedUsers) {
+    private Map<String, Integer> assignBasedOnPreviousAssignments(int numberOfUsersUnassigned, Map<String, Integer> initialUsersGroups) {
         Map<String, Integer> assignedUsersGroups = initialUsersGroups;
         if(numberOfUsersUnassigned > 0) {
-            Map<String, Integer> offsetMap;
-            while (numberOfUsersUnassigned > 0) {
-                offsetMap = calculateOffset(assignedUsersGroups);
-                assignedUsersGroups = addToBiggestOffset(offsetMap, assignedUsersGroups);
-                numberOfUsersUnassigned--;
-            }
+            assignedUsersGroups = assignRestOfUsers(assignedUsersGroups, numberOfUsersUnassigned);
         }
         return assignedUsersGroups;
     }
 
     private void assignBasedOnCurrentCapacity(int usersUnassigned, Queue<String> unassignedUsersqueue) {
         Map<String, Integer> usersGroupLoad = calculateCurrentLoad();
-        Map<String, Integer> offsetMap;
         int numberOfUsersUnassigned = usersUnassigned;
+        usersGroupLoad = assignRestOfUsers(usersGroupLoad, numberOfUsersUnassigned);
+        usersGroupLoad = substractOriginalLoad(usersGroupLoad);
+        mergeWithUserGroupsAndReleaseLatch(usersGroupLoad, unassignedUsersqueue);
+    }
+
+    private Map<String, Integer> assignRestOfUsers(Map<String, Integer> usersGroupLoad, int numberOfUsersUnassigned) {
+        Map<String, Integer> offsetMap;
         while (numberOfUsersUnassigned > 0) {
             offsetMap = calculateOffset(usersGroupLoad);
             usersGroupLoad = addToBiggestOffset(offsetMap, usersGroupLoad);
             numberOfUsersUnassigned--;
         }
-        usersGroupLoad = substractOriginalLoad(usersGroupLoad);
-        mergeWithUserGroupsAndReleaseLatch(usersGroupLoad, unassignedUsersqueue);
+        return usersGroupLoad;
     }
 
     private Map<String, Integer> substractOriginalLoad(Map<String, Integer> usersGroupLoad) {
@@ -133,27 +135,27 @@ public class Loadbalancer {
         return currentLoad;
     }
 
-    public void releaseLatch() {
+    private void releaseLatch() {
         if (latch != null) {
             latch.countDown();
         }
     }
 
-    void mergeWithUserGroupsAndReleaseLatch(Map<String, Integer> offsetMap, Queue<String> unassignedUsersQueue) {
+    private void mergeWithUserGroupsAndReleaseLatch(Map<String, Integer> offsetMap, Queue<String> unassignedUsersQueue) {
         offsetMap.entrySet().forEach(entry ->
             IntStream.range(0, entry.getValue()).forEach($ -> userGroups.put(unassignedUsersQueue.poll(), entry.getKey()))
         );
         releaseLatch();
     }
 
-    Map<String, Integer> addToBiggestOffset(Map<String, Integer> offsetMap, Map<String, Integer> mockUsersGroups) {
+    private Map<String, Integer> addToBiggestOffset(Map<String, Integer> offsetMap, Map<String, Integer> mockUsersGroups) {
         String biggestOffsetGroup = offsetMap.entrySet().stream().max(Map.Entry.comparingByValue()).get().getKey();
         Map<String, Integer> tempMap = new HashMap<>(mockUsersGroups);
         tempMap.compute(biggestOffsetGroup,  (k, v) -> v + 1);
         return tempMap;
     }
 
-    Map<String, Integer> calculateOffset(Map<String, Integer> newMap) {
+    private Map<String, Integer> calculateOffset(Map<String, Integer> newMap) {
         double assignedUsers = userGroups.keySet().size();
         if (assignedUsers == 0) {
             assignedUsers = 1;

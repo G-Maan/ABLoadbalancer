@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>${spring-version}</version>
+        <version>1.5.6.RELEASE</version>
     </parent>
 
     <dependencies>
@@ -31,19 +31,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
             <version>${spring-version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava-version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j-version}</version>
-        </dependency>
-
 
         <dependency>
             <groupId>org.mockito</groupId>
